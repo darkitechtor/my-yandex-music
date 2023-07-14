@@ -2,3 +2,4 @@ ya_music_env
 .env
 test.*
 result/
+*.txt

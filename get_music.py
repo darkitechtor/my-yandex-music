@@ -24,11 +24,11 @@ artist_ids = []
 try:
     for artist in artists:
         artist_ids.append(artist.artist.id)
-except: # type: ignore
-    print("Artists weren't loaded.")
+except:
+    print("Artists: FAILURE")
     exit()
 else:
-    print("Artists were loaded.")
+    print("Artists: SUCCESS")
 
 # получаем список id лайкнутых альбомов
 albums = client.users_likes_albums(rich=False)
@@ -36,11 +36,11 @@ album_ids = []
 try:
     for album in albums:
         album_ids.append(album['id'])
-except: # type: ignore
-    print("Albums weren't loaded.")
+except:
+    print("Liked albums: FAILURE")
     exit()
 else:
-    print("Albums were loaded.")
+    print("Liked albums: SUCCESS")
 
 # получаем список id лайкнутых песен
 tracks = client.users_likes_tracks()
@@ -48,11 +48,11 @@ track_ids = []
 try:
     for track in tracks.tracks_ids:
         track_ids.append(track)
-except: # type: ignore
-    print("Tracks weren't loaded.")
+except:
+    print("Tracks: FAILURE")
     exit()
 else:
-    print("Tracks were loaded.")
+    print("Tracks: SUCCESS")
 
 """
 ПОЛУЧАЕМ ПО КАЖДОЙ СУЩНОСТИ ДАННЫЕ, НЕОБХОДИМЫЕ ДЛЯ БАЗЫ ЗНАНИЙ
@@ -78,10 +78,10 @@ for album_id in tqdm(album_ids, desc="Liked Albums"):
         for artist in album.artists:
             artist_ids.append(artist.id)
 
-    sleep(0.5)
+    sleep(0.1)
 
 with open("liked_albums.txt", "w") as f:
-	f.write(liked_albums)
+	f.write(str(liked_albums))
 
 # получаем список информации по лайкнутым песням, перебирая их id
 for track_id in tqdm(track_ids, desc="Tracks"):
@@ -97,12 +97,16 @@ for track_id in tqdm(track_ids, desc="Tracks"):
         for artist in track.artists:
             artist_ids.append(artist.id)
 
-    sleep(0.5)
+    sleep(0.1)
 
 with open("liked_tracks.txt", "w") as f:
-	f.write(liked_tracks)
+	f.write(str(liked_tracks))
 
-# получаем список информации по лайкнутым исполнителям, перебирая их id
+# избавляемся от дублей в исполнителях
+artist_ids = list(set(artist_ids))
+
+# получаем список информации по исполнителям (лайкнутым,
+# исполнителям дайкнутых песен и альбомов), перебирая их id
 for artist_id in tqdm(artist_ids, desc="Artists"):
     artist_data = {}
     artists = client.artists(artist_id)
@@ -114,36 +118,36 @@ for artist_id in tqdm(artist_ids, desc="Artists"):
 
         liked_artists.append(artist_data)
 
-    sleep(0.5)
+    sleep(0.1)
 
 with open("liked_artists.txt", "w") as f:
-	f.write(liked_artists)
+	f.write(str(liked_artists))
 
-# чтобы список исполнителей был полным, выполняем этот шаг сейчас,
-# а не в предыдущем блоке
+# чтобы список был полным, выполняем сейчас, а не в предыдущем блоке
 # получаем список id альбомов лайкнутых артистов
 all_album_ids = []
 try:
-    for artist in tqdm(list(set(artist_ids)), desc="All Albums"):
+    for artist in tqdm(artist_ids, desc="All Albums Preparation"):
         all_albums = client.artists_direct_albums(artist)
         for album in all_albums:
             all_album_ids.append(album['id'])
 
-        sleep(0.5)
-except: # type: ignore
-    print("All albums weren't loaded.")
+        sleep(0.1)
+except:
+    print("All albums: FAILURE")
     exit()
 else:
-    print("All albums were loaded.")
+    print("All albums: SUCCESS")
         
 # получаем список информации по всем альбомам лайкнутых исполнителей,
 # перебирая их id
 
 all_albums = []
-
-for album_id in tqdm(list(filter(lambda x: x not in album_ids,
-                                 all_album_ids
-                                 ))):
+# исключаем уже собранные лайкнутые альбомы, чтобы не было дублей
+for album_id in tqdm(
+    list(filter(lambda x: x not in album_ids, all_album_ids))
+    , desc="All Albums"
+    ):
     album_data = {}
     albums = client.albums(album_id)
 
@@ -155,10 +159,10 @@ for album_id in tqdm(list(filter(lambda x: x not in album_ids,
 
         all_albums.append(album_data)
 
-    sleep(0.5)
+    sleep(0.1)
 
 with open("all_albums.txt", "w") as f:
-	f.write(all_albums)
+	f.write(str(all_albums))
 
 """
 ЗАПИСЫВАЕМ ДАННЫЕ В ФАЙЛЫ В НУЖНОМ ФОРМАТЕ
